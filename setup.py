@@ -8,7 +8,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 
-version = "0.0.1"
+version = "0.1.0"
 
 
 if sys.argv[-1] == "release":
@@ -34,7 +34,7 @@ with open('requirements.txt') as f:
 setup(
     name="labanotation",
     version=version,
-    description="A python library",
+    description="Labanotation tool library",
     author="iory",
     author_email="ab.ioryz@gmail.com",
     url="https://github.com/iory/labanotation",
