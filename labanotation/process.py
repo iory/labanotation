@@ -12,6 +12,7 @@ from labanotation.labanotation_utils import arrange_labanotations
 from labanotation.labanotation_utils import calculate_unfiltered_labanotations
 from labanotation.labanotation_utils import calculate_z_axis
 from labanotation.labanotation_utils import extract_target_labanotations
+from labanotation.labanotation_utils import laban2str2
 from labanotation import parallel_energy
 from labanotation import total_energy
 from labanotation.visualization import labanotation_to_image
@@ -23,7 +24,8 @@ def get_labanotation_results(csv_filepath,
                              gauss_window_size=61,
                              gauss_sigma=5,
                              base_rotation_style='update',
-                             save_laban_image=True):
+                             save_laban_image=True,
+                             return_full=False):
     output_path = Path(output_path)
     csv_filepath = Path(csv_filepath)
 
@@ -90,23 +92,63 @@ def get_labanotation_results(csv_filepath,
         gauss_window_size=gauss_window_size,
         gauss_sigma=gauss_sigma)
 
-    laban_data = {'keyframe_timestamps': keyframe_timestamps.tolist(),
-                  'keyframe_labanotations': labans,
-                  'keyframe_indices': keyframe_indices.tolist(),
-                  'timestamps': timestamps.tolist(),
-                  'labanotations': all_labans,
-                  'wrist_right_keyframe_timestamps':
-                  (frame_to_second * wrist_right_keyframe_indices).tolist(),
-                  'wrist_right_keyframe_indices':
-                  wrist_right_keyframe_indices.tolist(),
-                  'right_energy': right_energy.tolist(),
-                  'wrist_left_keyframe_timestamps':
-                  (frame_to_second * wrist_left_keyframe_indices).tolist(),
-                  'wrist_left_keyframe_indices':
-                  wrist_left_keyframe_indices.tolist(),
-                  'left_energy': left_energy.tolist(),
-                  'parameters': {'gauss_window_size': gauss_window_size,
-                                 'gauss_sigma': gauss_sigma,
-                                 'base_rotation_style': base_rotation_style,
-                                 'frame_to_second': frame_to_second}}
+    keyframe_dict = {}
+    for index in keyframe_indices:
+        keyframe_dict[int(index)] = True
+    right_keyframe_dict = {}
+    for index in wrist_right_keyframe_indices:
+        right_keyframe_dict[int(index)] = True
+    left_keyframe_dict = {}
+    for index in wrist_left_keyframe_indices:
+        left_keyframe_dict[int(index)] = True
+
+    results = []
+    for i, (tm, laban) in enumerate(zip(timestamps, all_labans)):
+        d = {'timestamp': float(tm),
+             'labanotation': {
+                 'right': laban2str2(laban[0], laban[1],
+                                     dir_height=True,
+                                     space_delimiter=''),
+                 'left': laban2str2(laban[2], laban[3],
+                                    dir_height=True,
+                                    space_delimiter=''),
+                 # 'Right Elbow:': laban[0],
+                 # 'Right Wrist:': laban[1],
+                 # 'Left Elbow:': laban[2],
+                 # 'Left Wrist:': laban[3],
+             },
+             'keyframe': False,
+             'right_keyframe': False,
+             'left_keyframe': False}
+        d['keyframe'] = keyframe_dict.get(i, False)
+        d['right_keyframe'] = right_keyframe_dict.get(i, False)
+        d['left_keyframe'] = left_keyframe_dict.get(i, False)
+        results.append(d)
+    if return_full is False:
+        laban_data = {
+            'results': results,
+        }
+    else:
+        laban_data = {
+            'results': results,
+            'keyframe_timestamps': keyframe_timestamps.tolist(),
+            'keyframe_labanotations': labans,
+            'keyframe_indices': keyframe_indices.tolist(),
+            'timestamps': timestamps.tolist(),
+            'labanotations': all_labans,
+            'wrist_right_keyframe_timestamps':
+            (frame_to_second * wrist_right_keyframe_indices).tolist(),
+            'wrist_right_keyframe_indices':
+            wrist_right_keyframe_indices.tolist(),
+            'right_energy': right_energy.tolist(),
+            'wrist_left_keyframe_timestamps':
+            (frame_to_second * wrist_left_keyframe_indices).tolist(),
+            'wrist_left_keyframe_indices':
+            wrist_left_keyframe_indices.tolist(),
+            'left_energy': left_energy.tolist(),
+            'parameters': {'gauss_window_size': gauss_window_size,
+                           'gauss_sigma': gauss_sigma,
+                           'base_rotation_style': base_rotation_style,
+                           'frame_to_second': float(frame_to_second)}}
     save_json(laban_data, output_path / 'labanotation.json')
+    return laban_data
