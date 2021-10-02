@@ -25,9 +25,11 @@ def get_labanotation_results(csv_filepath,
                              gauss_sigma=5,
                              base_rotation_style='update',
                              save_laban_image=True,
-                             return_full=False):
+                             return_full=False,
+                             return_savefilepaths=False):
     output_path = Path(output_path)
     csv_filepath = Path(csv_filepath)
+    save_filepaths = []
 
     joint_positions_dict, timestamps = read_from_labanotation_suite(
         csv_filepath)
@@ -80,6 +82,8 @@ def get_labanotation_results(csv_filepath,
                 str(output_path
                     / 'labanotation-{0:06}.png'.format(i)),
                 cv2.rotate(laban_img, cv2.ROTATE_90_CLOCKWISE))
+            save_filepaths.append(
+                str(output_path / 'labanotation-{0:06}.png'.format(i)))
 
     wrist_right_keyframe_indices, right_energy, _, _ = total_energy(
         timestamps,
@@ -151,4 +155,8 @@ def get_labanotation_results(csv_filepath,
                            'base_rotation_style': base_rotation_style,
                            'frame_to_second': float(frame_to_second)}}
     save_json(laban_data, output_path / 'labanotation.json')
-    return laban_data
+    save_filepaths.append(output_path / 'labanotation.json')
+    if return_savefilepaths:
+        return laban_data, save_filepaths
+    else:
+        return laban_data
