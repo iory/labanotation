@@ -1,6 +1,8 @@
 # flake8: noqa
 
-import pkg_resources
+from .labanotation_utils import calculate_labanotation
+from .algorithm import total_energy
+from .algorithm import parallel_energy
+from .algorithm import calculate_section_timestamps
 
-
-__version__ = pkg_resources.get_distribution("labanotation").version
+from .laban_class import LabanotationGroup
