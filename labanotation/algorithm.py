@@ -141,7 +141,7 @@ def parallel_energy(
     """Parallel energy method.
 
     """
-    n_limbs = len(labanotations_list)
+    # n_limbs = len(labanotations_list)
     valley_output = []
     energy_list = []
     naive_energy_list = []
@@ -156,60 +156,10 @@ def parallel_energy(
         energy_list.append(energy)
         naive_energy_list.append(naive_energy)
 
-    # count how many peaks are there in a frame
-    n = len(labanotations_list[0])
-    center = np.zeros(n, dtype=np.int32)
-    for i in range(n_limbs):
-        for j in valley_output[i]:
-            center[j] += 1
-
-    indices = []
-    ptr = 0
-    thres_dis = 9  # int(300/(1000/self.data_fps))
-    while ptr < n:
-        tmp = center[ptr]
-        if tmp > 0:
-            indices.append(ptr)
-            ptr += thres_dis
-        else:
-            ptr += 1
-
-    new_indices = []
-    valley_output_new = []
-    for i in valley_output:
-        tmp = []
-        for j in i:
-            tmp.append(j)
-        valley_output_new.append(tmp)
-
-    for i in range(len(indices)):
-        left = indices[i]
-        right = indices[i] + thres_dis
-        group = []
-        for j in range(n_limbs):
-            ptr = 0
-            while ptr < len(valley_output_new[j]):
-                tmp = valley_output_new[j][ptr]
-                if left <= tmp <= right:
-                    group.append(tmp)
-                    del valley_output_new[j][ptr]
-                ptr += 1
-        if len(group) == 0:
-            continue
-        # kf = sum(group)/len(group)
-        # the first key frame, use the first potential frame in its group
-        if i == 0:
-            group.sort()
-            kf = group[0]
-        # the last key frame, use the last potential frame in its group
-        elif i == len(indices) - 1:
-            group.sort()
-            kf = group[-1]
-        else:
-            kf = sum(group) // len(group)
-        new_indices.append(kf)
-
-    keyframe_indices = sorted(set(new_indices))
+    keyframe_indices = merge_keyframe_indices(
+        valley_output,
+        n=len(labanotations_list[0]),
+        thres_dis=9)
     return keyframe_indices, valley_output, energy_list, naive_energy_list
 
 
@@ -303,3 +253,62 @@ def calculate_section_timestamps(
         for a, b in zip(keyframe_timestamps[:-1], keyframe_timestamps[1:])]
     return section_timestamps, energy, sampled_timestamps, \
         keyframe_timestamps, keyframe_indices
+
+
+def merge_keyframe_indices(keyframe_indices_list, n, thres_dis=9):
+    n_limbs = len(keyframe_indices_list)
+
+    indices = []
+    ptr = 0
+
+    center = np.zeros(n, dtype=np.int32)
+    for i in range(n_limbs):
+        for j in keyframe_indices_list[i]:
+            center[j] += 1
+
+    while ptr < n:
+        tmp = center[ptr]
+        if tmp > 0:
+            indices.append(ptr)
+            ptr += thres_dis
+        else:
+            ptr += 1
+
+    new_indices = []
+    keyframe_indices_list_new = []
+    for i in keyframe_indices_list:
+        tmp = []
+        for j in i:
+            tmp.append(j)
+        keyframe_indices_list_new.append(tmp)
+
+    for i in range(len(indices)):
+        left = indices[i]
+        right = indices[i] + thres_dis
+        group = []
+        for j in range(n_limbs):
+            ptr = 0
+            while ptr < len(keyframe_indices_list_new[j]):
+                tmp = keyframe_indices_list_new[j][ptr]
+                if left <= tmp <= right:
+                    group.append(tmp)
+                    del keyframe_indices_list_new[j][ptr]
+                ptr += 1
+        if len(group) == 0:
+            continue
+        # kf = sum(group)/len(group)
+        # the first key frame, use the first potential frame in its group
+        if i == 0:
+            group.sort()
+            kf = group[0]
+        # the last key frame, use the last potential frame in its group
+        elif i == len(indices) - 1:
+            group.sort()
+            kf = group[-1]
+        else:
+            kf = sum(group) // len(group)
+        new_indices.append(kf)
+
+    keyframe_indices = sorted(set(new_indices))
+    keyframe_indices = np.array(keyframe_indices, dtype=np.int64)
+    return keyframe_indices

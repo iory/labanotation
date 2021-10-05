@@ -7,6 +7,7 @@ from pybsc import nsplit
 from pybsc import save_json
 from pybsc.video_utils import extract_target_frame_from_timestamp
 
+from labanotation.algorithm import merge_keyframe_indices
 from labanotation.io import read_from_labanotation_suite
 from labanotation.labanotation_utils import arrange_labanotations
 from labanotation.labanotation_utils import calculate_unfiltered_labanotations
@@ -90,11 +91,15 @@ def get_labanotation_results(csv_filepath,
         joint_positions_dict['wrist_right'],
         gauss_window_size=gauss_window_size,
         gauss_sigma=gauss_sigma)
+    wrist_right_keyframe_indices = merge_keyframe_indices(
+        [wrist_right_keyframe_indices], n=len(timestamps))
     wrist_left_keyframe_indices, left_energy, _, _ = total_energy(
         timestamps,
         joint_positions_dict['wrist_left'],
         gauss_window_size=gauss_window_size,
         gauss_sigma=gauss_sigma)
+    wrist_left_keyframe_indices = merge_keyframe_indices(
+        [wrist_left_keyframe_indices], n=len(timestamps))
 
     keyframe_dict = {}
     for index in keyframe_indices:
