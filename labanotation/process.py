@@ -11,7 +11,6 @@ from labanotation.algorithm import merge_keyframe_indices
 from labanotation.io import read_from_labanotation_suite
 from labanotation.labanotation_utils import arrange_labanotations
 from labanotation.labanotation_utils import calculate_unfiltered_labanotations
-from labanotation.labanotation_utils import calculate_z_axis
 from labanotation.labanotation_utils import extract_target_labanotations
 from labanotation.labanotation_utils import laban2str2
 from labanotation import parallel_energy
@@ -27,7 +26,8 @@ def get_labanotation_results(csv_filepath,
                              base_rotation_style='update',
                              save_laban_image=True,
                              return_full=False,
-                             return_savefilepaths=False):
+                             return_savefilepaths=False,
+                             z_axis=None):
     output_path = Path(output_path)
     csv_filepath = Path(csv_filepath)
     save_filepaths = []
@@ -35,9 +35,6 @@ def get_labanotation_results(csv_filepath,
     joint_positions_dict, timestamps = read_from_labanotation_suite(
         csv_filepath)
 
-    z_axis = calculate_z_axis(joint_positions_dict['shoulder_left'],
-                              joint_positions_dict['shoulder_right'],
-                              joint_positions_dict['spine_navel'],)
     lines = calculate_unfiltered_labanotations(
         joint_positions_dict,
         base_rotation_style=base_rotation_style,
